@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Home Savings & Mortgage Planner</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#17202a;--muted:#667085;--line:#e4e7ec;--accent:#2457d6;--soft:#eef3ff;--good:#137a4b;--bad:#b42318}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+main{max-width:1100px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+h1{font-size:26px;margin:0 0 6px}.sub{color:var(--muted);margin:0}.actions{display:flex;gap:8px;flex-wrap:wrap}
+button,.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 13px;font:inherit;cursor:pointer}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px}
+.hero{display:grid;grid-template-columns:1.5fr repeat(3,1fr);gap:12px;align-items:stretch}
+.hero .big{background:var(--soft);border-radius:14px;padding:18px}.hero .big strong{display:block;font-size:32px;margin-top:5px}
+.stat{background:#fafbfc;border-radius:12px;padding:14px}.label{font-size:13px;color:var(--muted);margin-bottom:6px}.value{font-size:18px;font-weight:700}
+.progress{height:10px;background:#e9edf4;border-radius:999px;overflow:hidden;margin-top:12px}.progress>div{height:100%;background:var(--accent);width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+h2{font-size:17px;margin:0 0 14px}label{display:block;font-size:13px;color:var(--muted)}input,select{width:100%;font:inherit;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin-top:5px;background:#fff}
+.row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-top:8px}.row button{height:42px}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
+.kpi{background:#fafbfc;border-radius:10px;padding:12px}.kpi b{display:block;margin-top:4px;font-size:17px}
+.switch{display:flex;align-items:center;gap:10px;color:var(--text);font-size:14px}.switch input{width:auto;margin:0}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}
+.small{font-size:12px;color:var(--muted)}.pos{color:var(--good)}.neg{color:var(--bad)}
+details summary{cursor:pointer;font-weight:600}.costgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.totalrow{display:flex;justify-content:space-between;font-weight:700;border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+@media(max-width:850px){.hero{grid-template-columns:1fr 1fr}.hero .big{grid-column:1/-1}.grid2,.grid3{grid-template-columns:1fr}.costgrid{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){main{padding:14px}.hero,.costgrid{grid-template-columns:1fr}.hero .big{grid-column:auto}.row{grid-template-columns:1fr}.row button{width:100%}.kpis{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<div class="top">
+  <div><h1>Home Savings & Mortgage Planner</h1><p class="sub">Work backwards from the cash you actually need to buy.</p></div>
+  <div class="actions"><button id="exportBtn">Export plan</button><button id="importBtn">Import plan</button><input id="importFile" type="file" accept=".json,application/json" hidden><button id="resetBtn">Reset</button></div>
+</div>
+
+<section class="card hero">
+  <div class="big"><div class="label">Target cash</div><strong id="targetCash">£0</strong><div class="small">Deposit + SDLT + buying costs + emergency buffer</div><div class="progress"><div id="bar"></div></div><div class="small" id="progressText" style="margin-top:7px"></div></div>
+  <div class="stat"><div class="label">Deposit</div><div class="value" id="heroDeposit"></div></div>
+  <div class="stat"><div class="label">Buying costs + SDLT</div><div class="value" id="heroCosts"></div></div>
+  <div class="stat"><div class="label">Emergency buffer</div><div class="value" id="heroBuffer"></div></div>
+</section>
+
+<div class="grid2">
+<section class="card">
+<h2>Property & mortgage</h2>
+<div class="grid2">
+<label>Property price<input id="price" type="number" min="0" step="5000" value="300000"></label>
+<label>Deposit %<input id="depositPct" type="number" min="0" max="100" step="1" value="15"></label>
+<label>Interest rate %<input id="rate" type="number" min="0" max="30" step=".1" value="4.5"></label>
+<label>Mortgage term<select id="term"><option>20</option><option>25</option><option selected>30</option><option>35</option><option>40</option></select></label>
+</div>
+<label class="switch" style="margin-top:14px"><input id="ftb" type="checkbox" checked> First-time buyer eligible for SDLT relief</label>
+<div class="kpis">
+<div class="kpi"><span class="label">Deposit amount</span><b id="depositAmount"></b></div>
+<div class="kpi"><span class="label">Mortgage</span><b id="mortgage"></b></div>
+<div class="kpi"><span class="label">LTV</span><b id="ltv"></b></div>
+<div class="kpi"><span class="label">Monthly payment</span><b id="payment"></b></div>
+<div class="kpi"><span class="label">Stamp Duty (SDLT)</span><b id="sdlt"></b></div>
+<div class="kpi"><span class="label">Total repaid</span><b id="totalRepaid"></b></div>
+</div>
+</section>
+
+<section class="card">
+<h2>Savings plan</h2>
+<div class="grid2">
+<label>Savings now<input id="current" type="number" min="0" step="100" value="15000"></label>
+<label>Emergency buffer<input id="buffer" type="number" min="0" step="500" value="5000"></label>
+<label style="grid-column:1/-1">Target purchase date<input id="targetDate" type="date" value="2028-09-01"></label>
+</div>
+<div class="kpis">
+<div class="kpi"><span class="label">Expected target date</span><b id="expectedDate"></b></div>
+<div class="kpi"><span class="label">Savings by chosen date</span><b id="byDate"></b></div>
+<div class="kpi"><span class="label">Surplus / shortfall</span><b id="gap"></b></div>
+<div class="kpi"><span class="label">Average needed / month</span><b id="neededMonthly"></b></div>
+</div>
+</section>
+</div>
+
+<section class="card">
+<div class="top"><div><h2>Monthly savings changes</h2><div class="small">Each amount applies from its effective month until the next change.</div></div><button class="primary" id="addRate">+ Add change</button></div>
+<div id="rateRows"></div>
+</section>
+
+<section class="card">
+<div class="top"><div><h2>One-off additions</h2><div class="small">Bonuses, gifts, refunds or other lump sums.</div></div><button class="primary" id="addBonus">+ Add one-off</button></div>
+<div id="bonusRows"></div>
+</section>
+
+<section class="card">
+<details open>
+<summary>Buying costs</summary>
+<div class="small" style="margin-top:7px">Editable planning assumptions. SDLT is calculated separately.</div>
+<div class="costgrid">
+<label>Legal / conveyancing<input class="cost" data-key="legal" type="number" value="2000"></label>
+<label>Searches<input class="cost" data-key="searches" type="number" value="300"></label>
+<label>Survey<input class="cost" data-key="survey" type="number" value="700"></label>
+<label>Mortgage fees<input class="cost" data-key="mortgageFee" type="number" value="1500"></label>
+<label>Moving<input class="cost" data-key="moving" type="number" value="750"></label>
+<label>Initial works / setup<input class="cost" data-key="works" type="number" value="1500"></label>
+<label>Other<input class="cost" data-key="other" type="number" value="500"></label>
+</div>
+<div class="totalrow"><span>Buying costs excluding SDLT</span><span id="buyingCosts"></span></div>
+</details>
+</section>
+
+<section class="card">
+<div class="top"><div><h2>Savings timeline</h2><div class="small">Stops when the full target cash amount is reached.</div></div><div class="small" id="timelineNote"></div></div>
+<div style="overflow-x:auto;margin-top:10px"><table><thead><tr><th>Month</th><th>Monthly saving</th><th>One-off</th><th>Total saved</th><th>Remaining</th></tr></thead><tbody id="timeline"></tbody></table></div>
+</section>
+<p class="small">SDLT rules modelled for England and Northern Ireland using current residential rates and first-time-buyer relief. Estimates only; verify tax and mortgage costs before purchase.</p>
+</main>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const money=new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0});
+const mf=new Intl.DateTimeFormat('en-GB',{month:'short',year:'numeric'});
+const today=new Date(), start=new Date(today.getFullYear(),today.getMonth(),1);
+const mv=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+const pm=s=>{const [y,m]=s.split('-').map(Number);return y&&m?new Date(y,m-1,1):null};
+const mi=d=>d.getFullYear()*12+d.getMonth();
+const add=(d,n)=>new Date(d.getFullYear(),d.getMonth()+n,1);
+const n=e=>Math.max(0,Number(e.value)||0);
+
+function stampDuty(price,firstTime){
+  if(firstTime && price<=500000) return Math.max(0,price-300000)*.05;
+  const bands=[[125000,0],[250000,.02],[925000,.05],[1500000,.10],[Infinity,.12]];
+  let total=0,prev=0;
+  for(const [limit,r] of bands){const taxable=Math.max(0,Math.min(price,limit)-prev);total+=taxable*r;if(price<=limit)break;prev=limit}
+  return total;
+}
+function mortgagePayment(p,annual,years){const months=years*12;if(!p||!months)return 0;const r=annual/1200;if(!r)return p/months;return p*r*Math.pow(1+r,months)/(Math.pow(1+r,months)-1)}
+function addRate(date=mv(start),amount=2000,removable=true){
+ const div=document.createElement('div');div.className='row rateRow';
+ div.innerHTML='<label>Effective from<input class="rDate" type="month" value="'+date+'"></label><label>Monthly saving<input class="rAmt" type="number" min="0" step="50" value="'+amount+'"></label>'+(removable?'<button class="remove">Remove</button>':'<span></span>');
+ $('#rateRows').append(div); div.querySelectorAll('input').forEach(e=>e.oninput=calc); const b=div.querySelector('.remove');if(b)b.onclick=()=>{div.remove();calc()}
+}
+function addBonus(date=mv(add(start,6)),amount=3000){
+ const div=document.createElement('div');div.className='row bonusRow';
+ div.innerHTML='<label>Month<input class="bDate" type="month" value="'+date+'"></label><label>Amount<input class="bAmt" type="number" min="0" step="100" value="'+amount+'"></label><button class="remove">Remove</button>';
+ $('#bonusRows').append(div); div.querySelectorAll('input').forEach(e=>e.oninput=calc);div.querySelector('.remove').onclick=()=>{div.remove();calc()}
+}
+function rates(){return $$('.rateRow').map(r=>({date:pm(r.querySelector('.rDate').value),amount:n(r.querySelector('.rAmt'))})).filter(x=>x.date).sort((a,b)=>a.date-b.date)}
+function bonuses(){return $$('.bonusRow').map(r=>({date:pm(r.querySelector('.bDate').value),amount:n(r.querySelector('.bAmt'))})).filter(x=>x.date)}
+function rateFor(d){let x=0;for(const r of rates())if(mi(r.date)<=mi(d))x=r.amount;return x}
+function bonusFor(d){return bonuses().filter(b=>mi(b.date)===mi(d)).reduce((s,b)=>s+b.amount,0)}
+function projectTo(date,current){if(!date)return current;let s=current;for(let i=1;i<=Math.max(0,mi(date)-mi(start));i++){const d=add(start,i);s+=rateFor(d)+bonusFor(d)}return s}
+
+function calc(){
+ const price=n($('#price')), depPct=Math.min(100,n($('#depositPct'))), current=n($('#current')), buffer=n($('#buffer')), interest=n($('#rate')), years=n($('#term'))||30;
+ const deposit=price*depPct/100, mortgage=Math.max(0,price-deposit), ltv=price?mortgage/price*100:0, sdlt=stampDuty(price,$('#ftb').checked);
+ const costs=$$('.cost').reduce((s,e)=>s+n(e),0), target=deposit+sdlt+costs+buffer, payment=mortgagePayment(mortgage,interest,years);
+ $('#depositAmount').textContent=$('#heroDeposit').textContent=money.format(deposit);
+ $('#mortgage').textContent=money.format(mortgage); $('#ltv').textContent=ltv.toFixed(0)+'%'; $('#payment').textContent=money.format(payment)+'/mo';
+ $('#sdlt').textContent=money.format(sdlt); $('#totalRepaid').textContent=money.format(payment*years*12);
+ $('#buyingCosts').textContent=money.format(costs); $('#heroCosts').textContent=money.format(costs+sdlt); $('#heroBuffer').textContent=money.format(buffer); $('#targetCash').textContent=money.format(target);
+ const prog=target?Math.min(100,current/target*100):100;$('#bar').style.width=prog+'%';$('#progressText').textContent=money.format(current)+' of '+money.format(target)+' ('+prog.toFixed(0)+'%)';
+
+ let s=current,reached=current>=target?start:null,rows=[];
+ for(let i=0;i<=240;i++){const d=add(start,i), monthly=i?rateFor(d):0, one=i?bonusFor(d):0;if(i)s+=monthly+one;rows.push({d,monthly,one,s});if(!reached&&s>=target)reached=d;if(reached&&mi(d)>=mi(reached))break}
+ $('#expectedDate').textContent=reached?mf.format(reached):'Not within 20 years'; $('#timelineNote').textContent=reached?'Target reached '+mf.format(reached):'Target not reached';
+ const td=pm($('#targetDate').value), by=projectTo(td,current), gap=by-target;
+ $('#byDate').textContent=money.format(by); $('#gap').textContent=(gap>=0?'+':'−')+money.format(Math.abs(gap));$('#gap').className=gap>=0?'pos':'neg';
+ if(td){const months=Math.max(0,mi(td)-mi(start)), bonusTotal=bonuses().filter(b=>mi(b.date)>mi(start)&&mi(b.date)<=mi(td)).reduce((a,b)=>a+b.amount,0);const rem=Math.max(0,target-current-bonusTotal);$('#neededMonthly').textContent=months?money.format(Math.ceil(rem/months))+'/mo':(rem?'Date passed':'£0/mo')}else $('#neededMonthly').textContent='—';
+ $('#timeline').innerHTML=rows.map(r=>'<tr><td>'+mf.format(r.d)+'</td><td>'+(r.monthly?money.format(r.monthly):'—')+'</td><td>'+(r.one?money.format(r.one):'—')+'</td><td><b>'+money.format(r.s)+'</b></td><td>'+money.format(Math.max(0,target-r.s))+'</td></tr>').join('');
+}
+function snapshot(){return{version:1,price:n($('#price')),depositPct:n($('#depositPct')),interest:n($('#rate')),term:n($('#term')),firstTime:$('#ftb').checked,current:n($('#current')),buffer:n($('#buffer')),targetDate:$('#targetDate').value,costs:Object.fromEntries($$('.cost').map(e=>[e.dataset.key,n(e)])),rates:rates().map(x=>({date:mv(x.date),amount:x.amount})),bonuses:bonuses().map(x=>({date:mv(x.date),amount:x.amount}))}}
+function loadPlan(p){
+ $('#price').value=p.price??300000;$('#depositPct').value=p.depositPct??15;$('#rate').value=p.interest??4.5;$('#term').value=p.term??30;$('#ftb').checked=p.firstTime!==false;$('#current').value=p.current??15000;$('#buffer').value=p.buffer??5000;$('#targetDate').value=p.targetDate||'2028-09-01';
+ if(p.costs)$$('.cost').forEach(e=>{if(p.costs[e.dataset.key]!=null)e.value=p.costs[e.dataset.key]});
+ $('#rateRows').innerHTML='';(p.rates?.length?p.rates:[{date:mv(start),amount:2000}]).forEach((x,i)=>addRate(x.date,x.amount,i>0));$('#bonusRows').innerHTML='';(p.bonuses||[]).forEach(x=>addBonus(x.date,x.amount));calc()
+}
+$('#addRate').onclick=()=>addRate(mv(add(start,12)),3000,true);$('#addBonus').onclick=()=>addBonus();
+$$('input,select').forEach(e=>{if(!e.classList.contains('rDate')&&!e.classList.contains('rAmt')&&!e.classList.contains('bDate')&&!e.classList.contains('bAmt')){e.oninput=calc;e.onchange=calc}});
+$('#exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(snapshot(),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='home-plan.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+$('#importBtn').onclick=()=>$('#importFile').click();$('#importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{loadPlan(JSON.parse(await f.text()))}catch{alert('That file is not a valid exported plan.')}e.target.value=''};
+$('#resetBtn').onclick=()=>{if(confirm('Reset all values?'))location.reload()};
+addRate(mv(start),2000,false);addRate(mv(add(start,12)),3000,true);addBonus(mv(add(start,6)),3000);calc();
+</script>
+</body>
+</html>
